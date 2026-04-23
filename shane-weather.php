@@ -67,6 +67,24 @@ add_settings_field(
 	'shane-weather',
 	'shane_weather_main_section'
 );
+
+register_setting(
+	'shane_weather_settings_group',
+	'shane_weather_enable_intro',
+	array(
+		'sanitize_callback' => 'absint',
+		'default'           => 1,
+	)
+);
+
+add_settings_field(
+	'shane_weather_enable_intro_field',
+	'Enable Intro Animation',
+	'shane_weather_enable_intro_field_callback',
+	'shane-weather',
+	'shane_weather_main_section'
+);
+
 }
 add_action( 'admin_init', 'shane_weather_register_settings' );
 
@@ -127,6 +145,21 @@ function shane_weather_api_key_field_callback() {
 	<?php
 }
 
+function shane_weather_enable_intro_field_callback() {
+	$value = get_option( 'shane_weather_enable_intro', 1 );
+	?>
+	<label>
+		<input
+			type="checkbox"
+			name="shane_weather_enable_intro"
+			value="1"
+			<?php checked( 1, $value ); ?>
+		/>
+		Enable intro animation
+	</label>
+	<?php
+}
+
 function shane_weather_get_weather_data() {
 
 	$cached = get_transient( 'shane_weather_data' );
@@ -170,25 +203,94 @@ function shane_weather_clear_cache() {
 	delete_transient( 'shane_weather_data' );
 }
 
-function shane_weather_display() {
-	$data = shane_weather_get_weather_data();
+/**
+ * Ajax loading
+ */
 
+function shane_weather_render_weather_html( $data, $is_intro = false ) {
 	if ( ! is_array( $data ) ) {
 		return '<p>' . esc_html( $data ) . '</p>';
 	}
 
-	$temp      = isset( $data['current']['temp_c'] ) ? $data['current']['temp_c'] : '';
-	$condition = isset( $data['current']['condition']['text'] ) ? $data['current']['condition']['text'] : '';
-	$city      = isset( $data['location']['name'] ) ? $data['location']['name'] : '';
+	$temp      = $data['current']['temp_c'];
+	$condition = $data['current']['condition']['text'];
+	$icon      = $data['current']['condition']['icon'];
+	$city      = $data['location']['name'];
 
-	$output  = '<div class="shane-weather-box">';
+	$background_image = shane_weather_get_background( $condition );
+	$background_url   = plugin_dir_url( __FILE__ ) . 'assets/images/' . $background_image;
+	$icon_url         = 'https:' . $icon;
+
+	$size_class = $is_intro ? ' shane-weather-box-intro' : '';
+
+	$output  = '<div class="shane-weather-box' . esc_attr( $size_class ) . '" style="background-image: url(\'' . esc_url( $background_url ) . '\');">';
 	$output .= '<h3>' . esc_html( $city ) . '</h3>';
-	$output .= '<p><strong>Temperature:</strong> ' . esc_html( $temp ) . '°C</p>';
-	$output .= '<p><strong>Condition:</strong> ' . esc_html( $condition ) . '</p>';
+	$output .= '<div class="shane-weather-main">';
+	$output .= '<img src="' . esc_url( $icon_url ) . '" alt="' . esc_attr( $condition ) . '">';
+	$output .= '<div class="shane-weather-info">';
+	$output .= '<p class="temp">' . esc_html( $temp ) . '°C</p>';
+	$output .= '<p class="condition">' . esc_html( $condition ) . '</p>';
+	$output .= '</div>';
+	$output .= '</div>';
 	$output .= '</div>';
 
 	return $output;
 }
+
+function shane_weather_ajax_refresh() {
+	$data = shane_weather_get_weather_data();
+
+	echo shane_weather_render_weather_html( $data );
+	wp_die();
+}
+
+add_action( 'wp_ajax_shane_weather_refresh', 'shane_weather_ajax_refresh' );
+add_action( 'wp_ajax_nopriv_shane_weather_refresh', 'shane_weather_ajax_refresh' );
+
+function shane_weather_display() {
+	$data         = shane_weather_get_weather_data();
+	$enable_intro = get_option( 'shane_weather_enable_intro', 1 );
+
+	if ( ! $enable_intro ) {
+		return '<div id="shane-weather-wrapper">' . shane_weather_render_weather_html( $data, false ) . '</div>';
+	}
+
+	$intro_card  = '<div id="shane-weather-intro" class="shane-weather-intro">';
+	$intro_card .= shane_weather_render_weather_html( $data, true );
+	$intro_card .= '</div>';
+
+	$main_card  = '<div id="shane-weather-wrapper" class="shane-weather-hidden-initially">';
+	$main_card .= shane_weather_render_weather_html( $data, false );
+	$main_card .= '</div>';
+
+	return $intro_card . $main_card;
+}
+
+function shane_weather_get_background( $condition ) {
+
+	$condition = strtolower( $condition );
+
+	if ( strpos( $condition, 'thunder' ) !== false ) {
+		return 'thunder.webp';
+	}
+
+	if ( strpos( $condition, 'rain' ) !== false ) {
+		return 'rainy.webp';
+	}
+
+	if ( strpos( $condition, 'cloud' ) !== false ) {
+		return 'cloudy.webp';
+	}
+
+	if ( strpos( $condition, 'sun' ) !== false || strpos( $condition, 'clear' ) !== false ) {
+		return 'sunny.webp';
+	}
+
+	// default fallback
+	return 'sunny.webp';
+}
+
+
 
 add_shortcode( 'shane_weather', 'shane_weather_display' );
 
@@ -274,3 +376,23 @@ class Shane_Weather_Widget extends WP_Widget {
 		return $instance;
 	}
 }
+function shane_weather_enqueue_scripts() {
+	wp_enqueue_script(
+		'shane-weather-refresh',
+		plugin_dir_url( __FILE__ ) . 'assets/weather-refresh.js',
+		array(),
+		'1.0.0',
+		true
+	);
+
+	wp_localize_script(
+		'shane-weather-refresh',
+		'shaneWeather',
+		array(
+			'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
+			'enableIntro' => (int) get_option( 'shane_weather_enable_intro', 1 ),
+		)
+	);
+}
+add_action( 'wp_enqueue_scripts', 'shane_weather_enqueue_scripts' );
+add_action( 'wp_enqueue_scripts', 'shane_weather_enqueue_scripts' );

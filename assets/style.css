@@ -1,7 +1,198 @@
 .shane-weather-box {
-	border: 1px solid #ddd;
+	border-radius: 10px;
 	padding: 15px;
-	border-radius: 8px;
-	max-width: 250px;
-	background: #f9f9f9;
+	max-width: 260px;
+	color: white;
+
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+
+	position: relative;
+	overflow: hidden;
+}
+
+.shane-weather-box::before {
+	content: "";
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.4);
+	z-index: 1;
+}
+
+.shane-weather-box * {
+	position: relative;
+	z-index: 2;
+}
+
+.shane-weather-box h3 {
+	margin-bottom: 10px;
+	font-size: 18px;
+}
+
+.shane-weather-main {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.shane-weather-main img {
+	width: 64px;
+	height: 64px;
+}
+
+.shane-weather-info .temp {
+	font-size: 22px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.shane-weather-info .condition {
+	margin: 0;
+	color: white;
+}
+#shane-weather-wrapper {
+	transition: opacity 0.3s ease;
+}
+
+/*Floating Tile animation*/
+#shane-weather-wrapper {
+	transition: opacity 0.3s ease;
+}
+
+.shane-weather-hidden-initially {
+	opacity: 0;
+	transition: opacity 0.4s ease;
+}
+
+.shane-weather-hidden-initially.is-visible {
+	opacity: 1;
+}
+
+.shane-weather-box {
+	border-radius: 10px;
+	padding: 15px;
+	max-width: 260px;
+	color: white;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	position: relative;
+	overflow: hidden;
+	min-height: 180px;
+}
+
+.shane-weather-box-intro {
+	max-width: 320px;
+	min-height: 220px;
+	padding: 20px;
+	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.shane-weather-box::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.35);
+	z-index: 1;
+}
+
+.shane-weather-box h3,
+.shane-weather-main,
+.shane-weather-info,
+.shane-weather-box img,
+.shane-weather-box .refresh-time {
+	position: relative;
+	z-index: 2;
+}
+
+.shane-weather-main {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.shane-weather-main img {
+	width: 64px;
+	height: 64px;
+}
+
+.shane-weather-info .temp {
+	font-size: 22px;
+	font-weight: bold;
+	margin: 0;
+}
+
+.shane-weather-info .condition {
+	margin: 0;
+	color: #f1f1f1;
+}
+
+.shane-weather-intro {
+	position: fixed;
+	left: 20px;
+	bottom: 20px;
+	z-index: 9999;
+	opacity: 0;
+	pointer-events: none;
+	transform: translateX(-40px);
+}
+
+.shane-weather-intro.is-visible {
+	animation: shaneWeatherIntroDesktop 3s ease forwards;
+}
+
+@keyframes shaneWeatherIntroDesktop {
+	0% {
+		opacity: 0;
+		transform: translateX(-40px);
+	}
+	15% {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	75% {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	100% {
+		opacity: 0;
+		transform: translateX(-40px);
+	}
+}
+
+@media (max-width: 767px) {
+	.shane-weather-intro {
+		left: 50%;
+		bottom: 20px;
+		transform: translateX(-50%) translateY(40px);
+		width: calc(100% - 32px);
+		max-width: 360px;
+	}
+
+	.shane-weather-intro.is-visible {
+		animation: shaneWeatherIntroMobile 3s ease forwards;
+	}
+
+	@keyframes shaneWeatherIntroMobile {
+		0% {
+			opacity: 0;
+			transform: translateX(-50%) translateY(40px);
+		}
+		15% {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+		75% {
+			opacity: 1;
+			transform: translateX(-50%) translateY(0);
+		}
+		100% {
+			opacity: 0;
+			transform: translateX(-50%) translateY(40px);
+		}
+	}
 }
