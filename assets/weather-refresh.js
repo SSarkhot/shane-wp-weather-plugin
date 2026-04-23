@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
 			if (mainCard) {
 				mainCard.classList.add("is-visible");
 			}
-		}, 3000);
+		}, 6000);
 	} else {
 		if (mainCard) {
 			mainCard.classList.add("is-visible");
